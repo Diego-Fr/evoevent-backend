@@ -4,7 +4,7 @@ const express = require('express')
 var cors = require('cors');
 const og_items = require('./og_items')
 const app = express()
-const port = 8000
+const port = 8999
 
 app.use(cors())
 app.use(express.json());
@@ -100,9 +100,11 @@ app.post('/', checkoutRequiredParams, async (req, res) => {
     res.send(response.data.links[1].href)
 })
 
-app.post('/new_checkout', (req, res)=>{
-    let params = req.params
+app.get('/checkout_status', (req, res)=>{
+    let params = req.body
     // if(params.items)
+
+    res.send(params)
 })
 
 app.listen(port, () => {
