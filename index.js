@@ -2,9 +2,11 @@ const axios = require('axios');
 require('dotenv').config()
 const express = require('express')
 var cors = require('cors');
-const og_items = require('./og_items')
+const og_items = require('./og_items');
+const { saveCheckoutId, getCheckout } = require('./db');
 const app = express()
 const port = 8999
+
 
 app.use(cors())
 app.use(express.json());
@@ -25,15 +27,7 @@ const DEFAULT_EXPRESS_OBJ = {
     //   }
     },
     "customer_modifiable": true,
-    "items": [
-      {
-        "reference_id": "ITEM01",
-        "name": "Nome do Produto",
-        "quantity": 1,
-        "unit_amount": 500,
-        "image_url": "https://www.petz.com.br/blog//wp-content/upload/2018/09/tamanho-de-cachorro-pet-1.jpg"
-      }
-    ],
+    "items": [],
     "additional_amount": 0,
     "discount_amount": 0,
     "payment_methods": [
@@ -91,26 +85,42 @@ const config = {
 
 
 
-// return response.data.access_token
-
+// método para criar um novo checkout e salva-lo no banco de dados
 app.post('/', checkoutRequiredParams, async (req, res) => {
     buildList(req.body.list)
     let response = await axios.post('https://sandbox.api.pagseguro.com/checkouts', DEFAULT_EXPRESS_OBJ, config)
     
+    let checkout_id = response.data.id
+    console.log(checkout_id);
+    
+    saveCheckoutId(response.data)
+
     res.send(response.data.links[1].href)
 })
 
-app.get('/checkout_status', (req, res)=>{
+//método que servirá para receber o retorno quando o status do checkout for atualizado
+app.post('/checkout_status_update', (req, res)=>{
     let params = req.body
     // if(params.items)
-
+    console.log(req);
+  
     res.send(params)
+})
+
+//retorna um checkout a partir do ID
+app.get('/checkout/:checkoutId', async (req, res)=>{
+  let id = req.params.checkoutId
+  let response =  await getCheckout(id)
+  console.log(req.params);
+  
+  res.send(response)
 })
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
 })
 
+//validar parâmetros do checkout recebido
 function checkoutRequiredParams(req, res, next){
     let {list} = req.body
     if(list && list.length > 0){
@@ -139,8 +149,8 @@ function buildList(list){
 }
 
 function getItem(id){
-    console.log(og_items);
     
     return og_items[id]
 }
   
+
